@@ -1,0 +1,8 @@
+{
+  "appId": "com.neelam.telecast",
+  "appName": "NilamCast",
+  "webDir": "www",
+  "server": {
+    "androidScheme": "https"
+  }
+}

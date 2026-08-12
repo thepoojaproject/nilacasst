@@ -1,0 +1,14 @@
+{
+  "name": "nilamcast-iptv",
+  "version": "1.2.0",
+  "private": true,
+  "scripts": {
+    "build": "echo Web app ready",
+    "cap:sync": "npx cap sync android"
+  },
+  "dependencies": {
+    "@capacitor/core": "^7.6.8",
+    "@capacitor/android": "^7.6.8",
+    "@capacitor/cli": "^7.6.8"
+  }
+}

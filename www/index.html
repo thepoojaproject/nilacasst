@@ -1,0 +1,566 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>NilamCast</title>
+<script src="https://cdn.jsdelivr.net/npm/hls.js@latest"></script>
+
+<style>
+#loginScreen{position:fixed;inset:0;background:#cae6cd;display:flex;align-items:center;justify-content:center;z-index:9999;font-family:Arial,sans-serif}
+.login-box{width:min(360px,88vw);background:#fff;padding:28px;border-radius:16px;box-shadow:0 8px 30px rgba(0,0,0,.18);text-align:center}
+.login-box h2{margin:0 0 20px;color:#222}
+.login-box input{width:100%;box-sizing:border-box;padding:12px;margin:7px 0;border:1px solid #ccc;border-radius:8px;font-size:16px}
+.login-box button{width:100%;padding:12px;margin-top:10px;border:0;border-radius:8px;background:#4CAF50;color:#fff;font-size:16px;cursor:pointer}
+#loginError{color:#d32f2f;min-height:20px;margin-top:10px;font-size:14px}
+</style>
+<style>
+:root{
+  --bg:#080808;--panel:#151515;--panel2:#202020;--text:#fff;--muted:#a8a8a8;
+  --accent:#e50914;--line:#292929;
+}
+html,body{margin:0!important;padding:0!important;background:var(--bg)!important;color:var(--text);
+font-family:Arial,Helvetica,sans-serif;min-height:100%;overflow-x:hidden}
+body{padding-bottom:78px!important}
+#appContent{display:none!important;padding:0!important;width:100%!important}
+#appContent.app-visible{display:block!important}
+#appContent>center{display:block!important;width:100%!important}
+#appContent .legacy-content{display:none!important}
+.netflix-app{display:block!important;background:var(--bg);min-height:100vh;text-align:left}
+.nt-top{position:sticky;top:0;z-index:1000;background:rgba(8,8,8,.96);backdrop-filter:blur(12px);
+height:58px;display:flex;align-items:center;padding:0 14px;gap:14px;border-bottom:1px solid #161616}
+.nt-logo{font-size:23px;font-weight:900;letter-spacing:-1px;color:#e50914}
+.nt-menu{display:flex;gap:14px;overflow:auto;white-space:nowrap;flex:1}
+.nt-menu button,.nt-icon{background:none;border:0;color:#ddd;font-size:13px;padding:7px 2px;cursor:pointer}
+.nt-menu button.active{color:#fff;font-weight:700}
+.nt-search{width:36px;height:36px;border:1px solid #444;border-radius:50%;background:#171717;color:white;font-size:18px}
+.nt-hero{position:relative;min-height:390px;display:flex;align-items:flex-end;padding:24px 18px;
+background:linear-gradient(180deg,rgba(8,8,8,.1),#080808 92%),linear-gradient(90deg,#151515,#262626);
+overflow:hidden}
+.nt-hero:after{content:"";position:absolute;inset:0;background:radial-gradient(circle at 70% 35%,rgba(229,9,20,.22),transparent 38%)}
+.nt-hero-content{position:relative;z-index:2;max-width:640px}
+.nt-kicker{color:#ddd;font-size:12px;text-transform:uppercase;letter-spacing:2px}
+.nt-title{font-size:38px;line-height:1;margin:8px 0 10px;font-weight:900}
+.nt-desc{color:#c8c8c8;font-size:14px;line-height:1.5;max-width:560px}
+.nt-actions{display:flex;gap:9px;margin-top:16px}
+.nt-btn{border:0;border-radius:5px;padding:11px 18px;font-weight:700;font-size:14px;cursor:pointer}
+.nt-btn.play{background:#fff;color:#000}.nt-btn.info{background:#555;color:#fff}
+.nt-section{padding:8px 14px 4px}
+.nt-section-head{display:flex;align-items:center;justify-content:space-between;margin:12px 0}
+.nt-section h2{font-size:19px;margin:0}.nt-section small{color:#888}
+.nt-row{display:flex;gap:10px;overflow-x:auto;padding:2px 0 13px;scroll-snap-type:x proximity}
+.nt-row::-webkit-scrollbar{height:3px}.nt-row::-webkit-scrollbar-thumb{background:#444}
+.nt-card{min-width:155px;width:155px;background:#151515;border-radius:7px;overflow:hidden;scroll-snap-align:start;
+border:1px solid #242424;cursor:pointer;transition:.18s;position:relative}
+.nt-card:hover{transform:translateY(-3px);border-color:#555}
+.nt-card.active{border-color:#e50914;box-shadow:0 0 0 2px rgba(229,9,20,.35)}
+.nt-thumb{height:94px;background:linear-gradient(135deg,#242424,#0d0d0d);display:flex;align-items:center;justify-content:center;
+font-size:29px;font-weight:900;color:#e50914}
+.nt-card-body{padding:9px}.nt-card-title{font-size:13px;font-weight:700;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.nt-card-meta{font-size:10px;color:#888;margin-top:5px}
+.nt-live{position:absolute;top:7px;left:7px;background:#e50914;color:#fff;font-size:9px;padding:3px 5px;border-radius:3px;font-weight:800}
+.nt-star{position:absolute;top:7px;right:7px;background:rgba(0,0,0,.7);border:0;color:#fff;border-radius:50%;width:26px;height:26px}
+.nt-player{margin:0 14px 14px;background:#000;border-radius:8px;overflow:hidden;border:1px solid #252525;position:relative}
+.nt-player video{width:100%!important;height:auto!important;aspect-ratio:16/9;display:block;background:#000}
+.nt-tap-play{position:absolute;left:50%;top:calc(50% - 24px);transform:translate(-50%,-50%);z-index:5;
+border:1px solid rgba(255,255,255,.5);background:rgba(0,0,0,.72);color:#fff;font-size:14px;font-weight:700;
+padding:12px 18px;border-radius:24px;cursor:pointer;white-space:nowrap}
+.nt-now{padding:10px 12px;background:#111}.nt-now strong{font-size:14px}.nt-now span{display:block;color:#888;font-size:11px;margin-top:4px}
+.nt-search-panel{display:none;padding:12px 14px;background:#101010;border-bottom:1px solid #222}
+.nt-search-panel.show{display:block}
+.nt-search-input{width:100%;height:44px;box-sizing:border-box;border:1px solid #444;background:#1c1c1c;color:white;border-radius:6px;padding:0 12px;font-size:15px}
+.nt-results{padding-top:4px}
+.nt-empty{color:#888;font-size:13px;padding:15px 0}
+.nt-bottom{position:fixed;bottom:0;left:0;right:0;height:62px;background:rgba(12,12,12,.98);border-top:1px solid #292929;
+display:flex;z-index:2000;justify-content:space-around}
+.nt-bottom button{border:0;background:none;color:#999;font-size:10px;min-width:70px}.nt-bottom button.active{color:#fff}
+.nt-bottom b{display:block;font-size:18px;margin-bottom:2px}
+.nt-modal{display:none;position:fixed;inset:0;background:rgba(0,0,0,.78);z-index:3000;align-items:flex-end}
+.nt-modal.show{display:flex}
+.nt-modal-box{width:100%;background:#171717;border-radius:16px 16px 0 0;padding:20px;box-sizing:border-box;max-height:78vh;overflow:auto}
+.nt-modal-head{display:flex;justify-content:space-between;align-items:center}.nt-modal h3{margin:0;font-size:20px}
+.nt-close{border:0;background:#333;color:white;border-radius:50%;width:32px;height:32px}
+.nt-chip{border:1px solid #444;background:#222;color:#ddd;border-radius:20px;padding:8px 11px;margin:4px;font-size:12px}
+.nt-login-logo{max-width:180px!important;width:65vw!important}
+@media(min-width:700px){
+ .nt-hero{min-height:500px;padding-left:40px}.nt-title{font-size:52px}
+ .nt-section{padding-left:40px;padding-right:40px}.nt-player{margin-left:40px;margin-right:40px}
+ .nt-card{min-width:190px;width:190px}.nt-thumb{height:115px}
+}
+</style>
+
+
+<style>
+*{box-sizing:border-box}
+html,body{margin:0;padding:0;width:100%;min-height:100%;overflow-x:hidden}
+body{font-family:Arial,sans-serif;background:#cae6cd}
+#loginScreen{padding:16px}
+.login-box{width:min(380px,100%);padding:24px 20px}
+.login-box input,.login-box button{font-size:16px;min-height:48px}
+
+#appContent{width:100%;padding:0 12px}
+#appContent>center{width:100%}
+#appContent img{max-width:160px;height:auto}
+#appContent video,#v{display:block;width:100%!important;height:auto!important;max-width:720px;aspect-ratio:16/9;margin:0 auto;border-radius:10px;background:#000}
+#searchBox{width:100%!important;max-width:640px!important;min-height:46px;border-radius:8px}
+#ch{width:100%!important;max-width:640px!important;height:auto}
+input[type="button"]{max-width:640px;width:100%;min-height:46px;border-radius:8px}
+hr{max-width:100%}
+#msg{display:block;max-width:640px;margin:12px auto;line-height:1.4;word-break:break-word}
+@media (min-width:700px){
+  #appContent{padding:0 20px}
+  #appContent video,#v{width:min(720px,100%)!important}
+  #searchBox,#ch,input[type="button"]{width:min(640px,100%)!important}
+}
+</style>
+
+<style>
+#appContent>center>div:first-child,#appContent>center>hr,#appContent>center>video,
+#appContent>center>br,#appContent>center>input,#appContent>center>select,
+#appContent>center>#msg,#appContent>center>medium{display:none!important}
+</style>
+</head>
+
+<body style="background-color: #cae6cd;">
+<div id="loginScreen">
+  <div class="login-box">
+    <h2>NilamCast Login</h2>
+    <input id="loginUser" type="text" placeholder="Login" autocomplete="username">
+    <input id="loginPass" type="password" placeholder="Password" autocomplete="current-password">
+    <button onclick="doLogin()">LOGIN</button>
+    <div id="loginError"></div>
+  </div>
+</div>
+<div id="appContent">
+<div class="netflix-app" id="netflixApp">
+  <header class="nt-top">
+    <div class="nt-logo">NILAMCAST</div>
+    <nav class="nt-menu">
+      <button class="active" onclick="ntFilter('all',this)">Home</button>
+      <button onclick="ntFilter('news',this)">News</button>
+      <button onclick="ntFilter('sports',this)">Sports</button>
+      <button onclick="ntFilter('entertainment',this)">Entertainment</button>
+      <button onclick="ntFilter('music',this)">Music</button>
+    </nav>
+    <button class="nt-search" onclick="toggleSearch()" aria-label="Search">⌕</button>
+  </header>
+
+  <div class="nt-search-panel" id="ntSearchPanel">
+    <input class="nt-search-input" id="ntSearch" placeholder="Search channels..." oninput="renderChannels(this.value)">
+  </div>
+
+  <section class="nt-hero">
+    <div class="nt-hero-content">
+      <div class="nt-kicker">Live TV • India</div>
+      <div class="nt-title">Watch Live.<br>Anytime.</div>
+      <div class="nt-desc">Discover live channels in a clean, mobile-first streaming experience. Search a channel and start watching instantly.</div>
+      <div class="nt-actions">
+        <button class="nt-btn play" onclick="focusChannels()">▶ Watch Now</button>
+        <button class="nt-btn info" onclick="openInfo()">ⓘ More Info</button>
+      </div>
+    </div>
+  </section>
+
+  <section class="nt-section" id="playerSection">
+    <div class="nt-section-head"><h2>Now Playing</h2><small id="ntNowLabel">Choose a channel</small></div>
+    <div class="nt-player">
+      <video id="ntVideo" controls playsinline></video>
+      <button id="ntTapToPlay" class="nt-tap-play" style="display:none" onclick="ntUnmutePlay()">🔊 Tap to Play with Sound</button>
+      <div class="nt-now"><strong id="ntPlayingName">Ready to watch</strong><span>HLS live stream</span></div>
+      <div class="nt-empty" id="nineXmStatus" style="display:none;padding:0 12px 10px"></div>
+    </div>
+  </section>
+
+  <section class="nt-section" id="channelsSection">
+    <div class="nt-section-head"><h2 id="sectionTitle">Popular Channels</h2><small id="channelCount">Loading...</small></div>
+    <div class="nt-row" id="channelRow"></div>
+    <div class="nt-empty" id="channelLoading">Loading live channels…</div>
+    <div class="nt-empty" id="channelError" style="display:none">Unable to load live channels. Please check your internet connection.</div>
+    <div class="nt-empty" id="channelEmpty" style="display:none">No matching channels found.</div>
+  </section>
+
+  <section class="nt-section">
+    <div class="nt-section-head"><h2>Quick Picks</h2><small>Tap to play</small></div>
+    <div class="nt-row" id="quickRow"></div>
+  </section>
+
+  <div class="nt-bottom">
+    <button class="active" onclick="scrollTopHome()"><b>⌂</b>Home</button>
+    <button onclick="toggleSearch()"><b>⌕</b>Search</button>
+    <button onclick="showFavorites()"><b>♡</b>My List</button>
+    <button onclick="openSettings()"><b>⚙</b>Settings</button>
+  </div>
+
+  <div class="nt-modal" id="ntModal" onclick="if(event.target===this)closeModal()">
+    <div class="nt-modal-box">
+      <div class="nt-modal-head"><h3 id="modalTitle">NilamCast</h3><button class="nt-close" onclick="closeModal()">×</button></div>
+      <div id="modalBody"></div>
+    </div>
+  </div>
+</div>
+
+
+<center>
+<div style="margin-top: 10px;">
+  <img src="logo.png" alt="Logo" border="0" style="width: 180px; max-width: 70vw; height: auto; display:block; margin:auto;">
+</div>
+
+<hr width="80%" style="border-color: #ccc;">
+
+<video id="v" width="640" height="360" controls></video>
+
+<br><br>
+
+Search Channel:<br>
+<input type="text" id="searchBox" placeholder="Type channel name..." 
+       style="width:300px;padding:5px;font-size:16px;border:1px solid #ccc;">
+<br>
+<select id="ch" size="5" style="width:320px;display:none;margin-top:5px;border:1px solid #ccc;">
+</select>
+
+<br>
+<input type="button" value="PLAY" onclick="playit()" style="font-size:16px;margin-top:5px;padding:5px 15px;background:#4CAF50;color:white;border:none;cursor:pointer;">
+
+<br><br>
+<span id="msg">Loading channels...</span>
+
+<hr width="80%" style="border-color: #ccc;">
+<medium>Made with ❤️ for Neelam</medium>
+</center>
+
+<script>
+var M3U = "https://iptv-org.github.io/iptv/countries/in.m3u";
+var video = document.getElementById('v');
+var sel = document.getElementById('ch');
+var searchBox = document.getElementById('searchBox');
+var msg = document.getElementById('msg');
+var hls = null;
+var allChannels = [];
+
+fetch(M3U)
+.then(r => r.text())
+.then(data => {
+  var lines = data.split('\n');
+  var name = '';
+  for(var i=0; i<lines.length; i++){
+    var line = lines[i].trim();
+    if(line.startsWith('#EXTINF')){
+      name = line.split(',').pop().trim();
+    } else if(line.startsWith('http') && name){
+      allChannels.push({
+        name: name,
+        url: line
+      });
+      name = '';
+    }
+  }
+  msg.innerHTML = 'Channels loaded: ' + allChannels.length + '. Type to search.';
+  window.telecastChannelsError = false;
+  window.dispatchEvent(new CustomEvent('telecast:channels-ready', {detail: allChannels}));
+})
+.catch(e => {
+  msg.innerHTML = 'Error loading list.';
+  window.telecastChannelsError = true;
+  window.dispatchEvent(new CustomEvent('telecast:channels-error'));
+});
+
+searchBox.addEventListener('input', function() {
+  var searchText = this.value.toLowerCase().trim();
+  var channelList = document.getElementById('ch');
+  
+  channelList.innerHTML = '';
+  
+  if (searchText.length < 2) {
+    channelList.style.display = 'none';
+    return;
+  }
+  
+  var filteredChannels = allChannels.filter(function(channel) {
+    return channel.name.toLowerCase().includes(searchText);
+  });
+  
+  filteredChannels.forEach(function(channel) {
+    var opt = document.createElement('option');
+    opt.value = channel.url;
+    opt.text = channel.name;
+    channelList.add(opt);
+  });
+  
+  if (filteredChannels.length > 0) {
+    channelList.style.display = 'block';
+    channelList.size = Math.min(filteredChannels.length, 8);
+  } else {
+    channelList.style.display = 'none';
+    msg.innerHTML = 'No channels found.';
+  }
+});
+
+sel.addEventListener('change', function() {
+  if (this.value) {
+    playit();
+  }
+});
+
+document.addEventListener('click', function(event) {
+  var channelList = document.getElementById('ch');
+  if (event.target !== searchBox && event.target !== channelList) {
+    channelList.style.display = 'none';
+  }
+});
+
+function playit(){
+  var url = sel.value;
+  var selectedOption = sel.options[sel.selectedIndex];
+  
+  if(!url || !selectedOption){
+    msg.innerHTML = 'Select a channel first.';
+    return;
+  }
+  
+  var name = selectedOption.text;
+  msg.innerHTML = 'Now playing: ' + name;
+  
+  sel.style.display = 'none';
+  
+  if(hls){ hls.destroy(); hls=null; }
+  video.pause();
+  video.src='';
+
+  if(Hls.isSupported()){
+    hls = new Hls();
+    hls.loadSource(url);
+    hls.attachMedia(video);
+    hls.on(Hls.Events.MANIFEST_PARSED,function(){ video.play(); });
+  } else if(video.canPlayType('application/vnd.apple.mpegurl')){
+    video.src = url;
+    video.play();
+  } else {
+    msg.innerHTML = 'Browser not supported.';
+  }
+}
+</script>
+</div>
+<script>
+function doLogin(){
+  const user=document.getElementById('loginUser').value.trim();
+  const pass=document.getElementById('loginPass').value;
+  const error=document.getElementById('loginError');
+  if(user==='Neelam' && pass==='Neelam143'){
+    error.textContent='';
+    sessionStorage.setItem('telecast_logged_in','1');
+    showTelecastApp();
+  }else{
+    error.textContent='Invalid Login or Password';
+  }
+}
+function showTelecastApp(){
+  document.getElementById('loginScreen').style.display='none';
+  document.getElementById('appContent').classList.add('app-visible');
+  initTelecastUI();
+}
+function telecastLogout(){
+  sessionStorage.removeItem('telecast_logged_in');
+  document.getElementById('appContent').classList.remove('app-visible');
+  document.getElementById('loginScreen').style.display='flex';
+  const u=document.getElementById('loginUser'), p=document.getElementById('loginPass'), e=document.getElementById('loginError');
+  if(u) u.value=''; if(p) p.value=''; if(e) e.textContent='';
+}
+document.addEventListener('DOMContentLoaded',function(){
+  if(sessionStorage.getItem('telecast_logged_in')==='1'){
+    showTelecastApp();
+  }
+});
+</script>
+
+<script>
+let ntAll=[], ntFavorites=JSON.parse(localStorage.getItem('telecast_favorites')||'[]'), ntHls=null;
+let ntCurrentFilter='all', ntNowPlayingUrl=null;
+
+function ntEsc(s){return String(s||'').replace(/[&<>"']/g,m=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[m]));}
+function channelCategory(name){
+ const n=(name||'').toLowerCase();
+ if(/sport|star sports|sony ten|ten sports|dd sports/.test(n)) return 'sports';
+ if(/news|aaj|zee news|ndtv|india tv|times now|republic/.test(n)) return 'news';
+ if(/music|9xm|mtv|music/.test(n)) return 'music';
+ if(/movie|cinema|colors|sony|zee|entertainment|star plus|&tv/.test(n)) return 'entertainment';
+ return 'all';
+}
+function card(channel){
+ const fav=ntFavorites.includes(channel.url);
+ const active=ntNowPlayingUrl && channel.url===ntNowPlayingUrl;
+ return `<div class="nt-card${active?' active':''}" onclick='ntPlay(${JSON.stringify(channel.url)},${JSON.stringify(channel.name)})'>
+   <div class="nt-thumb">${ntEsc((channel.name||'TV').slice(0,2).toUpperCase())}</div>
+   <span class="nt-live">LIVE</span>
+   <button class="nt-star" onclick='event.stopPropagation();ntFav(${JSON.stringify(channel.url)})'>${fav?'★':'☆'}</button>
+   <div class="nt-card-body"><div class="nt-card-title">${ntEsc(channel.name)}</div><div class="nt-card-meta">${channelCategory(channel.name).toUpperCase()}</div></div>
+ </div>`;
+}
+function renderChannels(query=''){
+ document.getElementById('channelLoading').style.display='none';
+ document.getElementById('channelError').style.display='none';
+ const q=(query||'').toLowerCase().trim();
+ let list=ntAll.filter(c=>ntCurrentFilter==='all'||channelCategory(c.name)===ntCurrentFilter);
+ if(q) list=list.filter(c=>(c.name||'').toLowerCase().includes(q));
+ const row=document.getElementById('channelRow');
+ row.innerHTML=list.slice(0,80).map(card).join('');
+ document.getElementById('channelCount').textContent=list.length+' channels';
+ document.getElementById('channelEmpty').style.display=list.length?'none':'block';
+ renderQuick(list);
+}
+function showChannelLoadError(){
+ document.getElementById('channelLoading').style.display='none';
+ document.getElementById('channelEmpty').style.display='none';
+ document.getElementById('channelError').style.display='block';
+ document.getElementById('channelCount').textContent='0 channels';
+}
+function renderQuick(list){
+ const quick=(list||ntAll).slice(0,12);
+ document.getElementById('quickRow').innerHTML=quick.map(card).join('');
+}
+function ntPlay(url,name,opts){
+ opts=opts||{};
+ const v=document.getElementById('ntVideo');
+ if(ntHls){try{ntHls.destroy()}catch(e){} ntHls=null;}
+ v.pause();v.removeAttribute('src');v.load();
+ v.muted=false;
+ hideTapToPlay();
+ document.getElementById('nineXmStatus').style.display='none';
+ document.getElementById('ntPlayingName').textContent=name;
+ document.getElementById('ntNowLabel').textContent='LIVE';
+ ntNowPlayingUrl=url;
+
+ function attemptPlay(){
+   const p=v.play();
+   if(p && typeof p.catch==='function'){
+     p.catch(()=>{
+       // Autoplay was blocked (common for programmatic/auto playback) — retry muted, offer sound toggle
+       v.muted=true;
+       v.play().catch(()=>{});
+       showTapToPlay();
+     });
+   }
+ }
+ function onFatalError(){
+   document.getElementById('ntPlayingName').textContent='Playback error: '+name;
+   if(opts.auto){
+     const statusEl=document.getElementById('nineXmStatus');
+     statusEl.textContent='9XM is currently unavailable.';
+     statusEl.style.display='block';
+   }
+ }
+
+ if(window.Hls && Hls.isSupported()){
+   ntHls=new Hls();ntHls.loadSource(url);ntHls.attachMedia(v);
+   ntHls.on(Hls.Events.MANIFEST_PARSED,()=>attemptPlay());
+   ntHls.on(Hls.Events.ERROR,(evt,data)=>{ if(data && data.fatal) onFatalError(); });
+ }else if(v.canPlayType('application/vnd.apple.mpegurl')){
+   v.src=url;
+   attemptPlay();
+ }else{
+   document.getElementById('ntPlayingName').textContent='Browser not supported for live playback.';
+ }
+ ntFavHistory(name,url);
+ renderChannels(document.getElementById('ntSearch').value);
+ if(!opts.auto){
+   document.getElementById('playerSection').scrollIntoView({behavior:'smooth',block:'start'});
+ }
+}
+function showTapToPlay(){document.getElementById('ntTapToPlay').style.display='block';}
+function hideTapToPlay(){document.getElementById('ntTapToPlay').style.display='none';}
+function ntUnmutePlay(){
+ const v=document.getElementById('ntVideo');
+ v.muted=false;
+ v.play().catch(()=>{});
+ hideTapToPlay();
+}
+function ntFav(url){
+ ntFavorites=ntFavorites.includes(url)?ntFavorites.filter(x=>x!==url):[...ntFavorites,url];
+ localStorage.setItem('telecast_favorites',JSON.stringify(ntFavorites));
+ renderChannels(document.getElementById('ntSearch').value);
+}
+function ntFavHistory(name,url){localStorage.setItem('telecast_last',JSON.stringify({name,url}));}
+function ntFilter(filter,btn){
+ ntCurrentFilter=filter;
+ document.querySelectorAll('.nt-menu button').forEach(b=>b.classList.remove('active'));
+ btn.classList.add('active');
+ document.getElementById('sectionTitle').textContent=filter==='all'?'Popular Channels':filter[0].toUpperCase()+filter.slice(1);
+ renderChannels(document.getElementById('ntSearch').value);
+}
+function toggleSearch(){
+ const p=document.getElementById('ntSearchPanel');p.classList.toggle('show');
+ if(p.classList.contains('show'))setTimeout(()=>document.getElementById('ntSearch').focus(),80);
+}
+function focusChannels(){document.getElementById('channelsSection').scrollIntoView({behavior:'smooth'});}
+function scrollTopHome(){window.scrollTo({top:0,behavior:'smooth'});}
+function openInfo(){
+ document.getElementById('modalTitle').textContent='About NilamCast';
+ document.getElementById('modalBody').innerHTML='<p style="color:#bbb;line-height:1.6">A Netflix-inspired live TV interface for the NilamCast IPTV player. Search channels, filter categories, save favorites and watch HLS streams.</p><div><button class="nt-chip">📺 Live TV</button><button class="nt-chip">🔎 Search</button><button class="nt-chip">♡ My List</button><button class="nt-chip">⚡ HLS</button></div>';
+ document.getElementById('ntModal').classList.add('show');
+}
+function showFavorites(){
+ const fav=ntAll.filter(c=>ntFavorites.includes(c.url));
+ document.getElementById('modalTitle').textContent='My List';
+ document.getElementById('modalBody').innerHTML=fav.length?'<div class="nt-row" style="margin-top:12px">'+fav.map(card).join('')+'</div>':'<p style="color:#999">No favorites yet. Tap ☆ on a channel to add it.</p>';
+ document.getElementById('ntModal').classList.add('show');
+}
+function openSettings(){
+ document.getElementById('modalTitle').textContent='Settings';
+ document.getElementById('modalBody').innerHTML='<p style="color:#bbb">NilamCast settings</p><button class="nt-chip" onclick="localStorage.removeItem(\'telecast_favorites\');ntFavorites=[];renderChannels();closeModal()">Clear My List</button><button class="nt-chip" onclick="closeModal();telecastLogout()">Log Out</button>';
+ document.getElementById('ntModal').classList.add('show');
+}
+function closeModal(){document.getElementById('ntModal').classList.remove('show');}
+
+function autoPlayNineXM(){
+ if(ntNowPlayingUrl) return; // don't override a channel the user already picked
+ const statusEl=document.getElementById('nineXmStatus');
+ const nineXM = ntAll.find(c=>(c.name||'').trim().toLowerCase()==='9xm')
+   || ntAll.find(c=>(c.name||'').toLowerCase().includes('9xm'));
+ if(nineXM){
+   statusEl.style.display='none';
+   ntPlay(nineXM.url, nineXM.name, {auto:true});
+ } else {
+   statusEl.textContent='9XM is currently unavailable.';
+   statusEl.style.display='block';
+ }
+}
+let ntInitDone=false;
+function initTelecastUI(){
+ // 1. Verify login state
+ if(sessionStorage.getItem('telecast_logged_in')!=='1') return;
+
+ // 2. Show #appContent using the correct CSS class (idempotent)
+ document.getElementById('appContent').classList.add('app-visible');
+
+ if(ntInitDone) return; // avoid double-binding listeners across auto-login + manual login
+ ntInitDone=true;
+
+ // 3+4. Wait for IPTV channels to load, then copy into the Netflix UI
+ function adoptChannels(list){
+   ntAll=(list||window.allChannels||[]).slice();
+   renderChannels(); // 5. Render channel cards + 6. handlers already wired via card()
+   autoPlayNineXM(); // find and auto-start the real 9XM channel, if present
+ }
+
+ if(Array.isArray(window.allChannels) && window.allChannels.length){
+   // Channels already loaded before init ran
+   adoptChannels(window.allChannels);
+ } else if(window.telecastChannelsError){
+   showChannelLoadError();
+ } else {
+   document.getElementById('channelLoading').style.display='block';
+   window.addEventListener('telecast:channels-ready', e=>adoptChannels(e.detail), {once:true});
+   window.addEventListener('telecast:channels-error', ()=>showChannelLoadError(), {once:true});
+   // Safety net in case events fire before listeners attach or never fire
+   setTimeout(()=>{
+     if(!ntAll.length){
+       if(Array.isArray(window.allChannels) && window.allChannels.length){
+         adoptChannels(window.allChannels);
+       } else {
+         showChannelLoadError(); // 7. Handle playlist loading errors gracefully
+       }
+     }
+   },8000);
+ }
+}
+</script>
+</body>
+</html>
